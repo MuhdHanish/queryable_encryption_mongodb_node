@@ -7,10 +7,14 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
-if (!process.env.MONGO_URI) {
-    console.error('MONGO_URI is not set in the environment variables');
-    process.exit(1);
-}
+const requiredEnvVars = ['MONGO_URI', 'MASTER_KEY'];
+
+requiredEnvVars.forEach((varName) => {
+    if (!process.env[varName]) {
+        console.error(`${varName} is not set in the environment variables`);
+        process.exit(1);
+    }
+});
 
 const masterKey = Buffer.from(process.env.MASTER_KEY!, 'base64');
 const keyVaultNamespace = 'encryption.__keyVault';
