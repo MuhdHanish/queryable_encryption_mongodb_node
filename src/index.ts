@@ -7,7 +7,7 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
-const requiredEnvVars = ['MONGO_URI', 'MASTER_KEY'];
+const requiredEnvVars = ['MONGO_URI', 'MASTER_KEY', 'MONGOCRYPTD_PATH'];
 
 requiredEnvVars.forEach((varName) => {
     if (!process.env[varName]) {
@@ -63,6 +63,9 @@ async function createEncryptedClient() {
         keyVaultNamespace,
         kmsProviders,
         schemaMap,
+        extraOptions: {
+            mongocryptdSpawnPath: process.env.MONGOCRYPTD_PATH!, 
+        },
     };
 
     return new MongoClient(process.env.MONGO_URI!, {
@@ -77,7 +80,7 @@ async function connectWithEncryption() {
     return encryptedClient;
 }
 
-app.post('/api/register', async (req: Request, res: Response) => {
+app.post('/api/user/register', async (req: Request, res: Response) => {
     let client;
     try {
         const { name, email, password, ssn } = req.body;
@@ -86,6 +89,23 @@ app.post('/api/register', async (req: Request, res: Response) => {
 
         const result = await db.collection('users').insertOne({ name, email, password, ssn });
         res.json({ message: 'User registered successfully', userId: result.insertedId });
+    } catch (error: any) {
+        console.error('Error:', error.message);
+        res.status(500).json({ error: error.message });
+    } finally {
+        if (client) await client.close();
+    }
+});
+
+app.get('/api/users', async (req: Request, res: Response) => {
+    let client;
+    try {
+        client = await connectWithEncryption();
+        const db = client.db('queryable_encryption');
+        const users = await db.collection('users').find({}, {
+            projection: { password: 0, ssn: 0 } 
+        }).toArray();
+        res.json(users);
     } catch (error: any) {
         console.error('Error:', error.message);
         res.status(500).json({ error: error.message });
