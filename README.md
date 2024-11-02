@@ -13,6 +13,8 @@ This project demonstrates how to implement **Client-Side Field Level Encryption 
 - [API Endpoints](#api-endpoints)
 - [Schema Map](#schema-map)
 - [Encryption Algorithms](#encryption-algorithms)
+- [Feedback](#feedback)
+- [Support](#support)
 
 ## Features
 
@@ -57,29 +59,40 @@ You need to create a `.env` file in the root of the project with the following v
 ```env
 MONGO_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/mydb?retryWrites=true&w=majority
 MASTER_KEY=your_base64_encoded_master_key
-KEY_ID=your_base64_encoded_key_id  # Key ID for encrypting data fields
 PORT=8000  # Port number for the server
 ```
 
-### How to Generate a Master Key
+### How to Generate a Master Key (with OpenSSL)
 
-For the **local KMS provider**, you need a 96-byte key. Here's an example of how you can generate it using Node.js:
+For the **local KMS provider**, you need a 96-byte key. You can generate it using the `openssl` command:
 
-```js
-require('crypto').randomBytes(96).toString('base64');
+```bash
+openssl rand -base64 96
 ```
 
 This will output a base64-encoded 96-byte key, which you can store in your `.env` file as `MASTER_KEY`.
 
-### How to Create a Data Key for Encryption
+### How to Generate the Key ID
 
-To generate a **KEY_ID** for your encryption key, run the following command:
+In the code, a **Key ID** (used for encrypting data fields) will be generated automatically if it doesn't exist. When running the server for the first time, it will generate the Key ID and prompt you to add it to the `.env` file.
 
-```bash
-node keyGenerator.js
-```
+To create the **KEY_ID**:
+1. Run the following command:
+    ```bash
+    npm run start:dev
+    ```
 
-This will output the key ID that you need to include in your `.env` file.
+2. If the `KEY_ID` is not set in your `.env`, the application will generate a new key and print it in the console:
+    ```bash
+    Add this KEY_ID to your .env file: <generated_key_id>
+    ```
+
+3. Copy the generated key and add it to the `.env` file as follows:
+    ```env
+    KEY_ID=your_base64_encoded_key_id
+    ```
+
+This **KEY_ID** is necessary for encrypting the data fields and will be used in future operations.
 
 ## How It Works
 
@@ -175,11 +188,10 @@ const schemaMap = {
 };
 ```
 
-## Encryption Algorithms:
+## Encryption Algorithms
 
 - **Deterministic Encryption**: Used for the `email` field, allows queries on encrypted data.
 - **Random Encryption**: Used for sensitive fields like `password` and `ssn`, provides stronger security but no querying capabilities.
-
 
 ## Feedback
 
@@ -187,4 +199,4 @@ If you have any feedback, please reach me at [muhammedhanish11@gmail.com](mailto
 
 ## Support
 
-Show your support by 🌟 the project!!
+Show your support by 🌟 starring the project!!
